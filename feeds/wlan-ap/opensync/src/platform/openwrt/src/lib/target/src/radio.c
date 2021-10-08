@@ -41,6 +41,8 @@ ovsdb_table_t table_Wifi_VIF_Config;
 ovsdb_table_t table_Wifi_Inet_Config;
 ovsdb_table_t table_Node_Config;
 
+int config_timer_blocked_list;
+
 unsigned int radproxy_apc = 0;
 
 static struct uci_package *wireless;
@@ -770,7 +772,7 @@ static void callback_Hotspot20_Config(ovsdb_update_monitor_t *mon,
 		LOG(ERR, "Hotspot20_Config: unexpected mon_type %d %s", mon->mon_type, mon->mon_uuid);
 		break;
 	}
-	set_config_apply_timeout(mon);
+	set_config_apply_timeout(mon, 0);
 	return;
 }
 
@@ -794,7 +796,7 @@ static void callback_Hotspot20_OSU_Providers(ovsdb_update_monitor_t *mon,
 				mon->mon_type, mon->mon_uuid);
 		break;
 	}
-	set_config_apply_timeout(mon);
+	set_config_apply_timeout(mon, 0);
 	return;
 }
 
@@ -819,7 +821,7 @@ static void callback_Hotspot20_Icon_Config(ovsdb_update_monitor_t *mon,
 				mon->mon_type, mon->mon_uuid);
 		break;
 	}
-	set_config_apply_timeout(mon);
+	set_config_apply_timeout(mon, 0);
 	return;
 
 }
@@ -910,7 +912,6 @@ static const struct blobmsg_policy apc_policy[__APC_ATTR_MAX] = {
 };
 
 struct schema_APC_Config apc_conf;
-
 
 bool apc_read_conf(struct schema_APC_Config *apcconf)
 {
@@ -1209,16 +1210,27 @@ static void config_timer_task(void *arg)
 	evsched_task_reschedule_ms(EVSCHED_SEC(1));
 }
 
-void set_config_apply_timeout(ovsdb_update_monitor_t *mon)
+void set_config_apply_timeout(ovsdb_update_monitor_t *mon, int custom_time_out)
 {
 	static bool firstconfig = true;
-	LOGI("=====Received config update - table:%s uuid:%s Action:%d======", mon->mon_table, mon->mon_uuid, mon->mon_type);
+	if(mon)
+		LOGI("=====Received config update - table:%s uuid:%s Action:%d======", mon->mon_table, mon->mon_uuid, mon->mon_type);
 	if(firstconfig) {
 		firstconfig = false;
-		timeout_set(&config_timer, CONFIG_APPLY_TIMEOUT * 1000);
+		if(!custom_time_out && mon) {
+			timeout_set(&config_timer, CONFIG_APPLY_TIMEOUT * 1000);
+		}
+		else {
+			timeout_set(&config_timer, custom_time_out * 1000);
+		}
 		evsched_task(&config_timer_task, NULL, EVSCHED_SEC(1));
 	} else {
-		timeout_set(&config_timer, CONFIG_APPLY_TIMEOUT * 1000);
+		if(!custom_time_out && mon) {
+			timeout_set(&config_timer, CONFIG_APPLY_TIMEOUT * 1000);
+		}
+		else {
+			timeout_set(&config_timer, custom_time_out * 1000);
+		}
 	}
 }
 
@@ -1226,14 +1238,14 @@ static void callback_Wifi_Inet_Config(ovsdb_update_monitor_t *mon,
 		struct schema_Wifi_Inet_Config *old_rec,
 		struct schema_Wifi_Inet_Config *iconf)
 {
-	set_config_apply_timeout(mon);
+	set_config_apply_timeout(mon, 0);
 }
 
 static void callback_Node_Config(ovsdb_update_monitor_t *mon,
 		struct schema_Node_Config *old,
 		struct schema_Node_Config *conf)
 {
-	set_config_apply_timeout(mon);
+	set_config_apply_timeout(mon, 0);
 }
 
 bool target_radio_init(const struct target_radio_ops *ops)

@@ -27,7 +27,7 @@ extern int hapd_rrm_set_neighbors(char *name, struct rrm_neighbor *neigh, int co
 extern void radio_maverick(void *arg);
 
 int nl80211_channel_get(char *name, unsigned int *chan);
-void set_config_apply_timeout(ovsdb_update_monitor_t *mon);
+void set_config_apply_timeout(ovsdb_update_monitor_t *mon, int custom_time_out);
 bool apc_read_conf(struct schema_APC_Config *apcconf);
 bool apc_read_state(struct schema_APC_State *apcst);
 int ubus_set_channel_switch(const char *if_name, uint32_t frequency,

@@ -499,7 +499,7 @@ void callback_Radius_Proxy_Config(ovsdb_update_monitor_t *self,
 				self->mon_type, self->mon_uuid);
 		break;
 	}
-	set_config_apply_timeout(self);
+	set_config_apply_timeout(self, 0);
 	return;
 }
 
