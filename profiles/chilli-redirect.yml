@@ -7,3 +7,4 @@ feeds:
 packages:
   - coova-chilli
   - chilli-redirect
+  - kmod-ipt-coova
